@@ -1,29 +1,47 @@
 const express = require("express");
-const { Sequelize, DataTypes } = require("sequelize");
-
+const sequelize = require("./database");
+const Menu = require("./menu.js");
+const User = require("./user");
+const Category = require("./category");
 const app = express();
-const port = 3000;
-
-const sequelize = new Sequelize("sequalize-video", "root", "$udhiR1ag", {
-  host: "localhost",
-  dialect: "mysql",
-}); 
-
-const User = sequelize.define("User", {
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-});
-
-sequelize.sync();
 
 app.use(express.json());
+sequelize.sync({});
+Category.hasMany(Menu, { foreignKey: "category_name" });
+// Category.bulkCreate([
+//   { id: "1", category_name: "veg" },
+//   { id: "2", category_name: "non-veg" },
+// ]);
+Menu.addHook("afterCreate", async (menu) => {
+  try {
+    const category = await Category.findOne({
+      where: { category_name: menu.category_name },
+    });
+    if (category) {
+      await category.increment("noofitems", { by: 1 });
+    }
+  } catch (error) {
+    console.error("Category doesn't exist", error);
+  }
+});
+app.post("/api/add-menu-item", async (req, res) => {
+  try {
+    const { id, name, price, description, category_name } = req.body;
+
+    const newMenuItem = await Menu.create({
+      id,
+      name,
+      price,
+      description,
+      category_name,
+    });
+
+    res.json({ message: "adding successful" });
+  } catch (error) {
+    console.error("Error adding menu item:", error);
+    res.status(500).json({ error: "Failed to add menu item" });
+  }
+});
 
 app.post("/api/user", async (req, res) => {
   try {
@@ -51,10 +69,10 @@ app.get("/api/login/:username", async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ where: { username } });
+    res.send(`Welcome ${username}`);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.send(`Welcome ${username}`);
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ error: "Failed to fetch user" });
@@ -71,6 +89,6 @@ app.get("/api/user", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is listening at http://localhost:${port}`);
+app.listen(3000, () => {
+  console.log(`Server is listening at http://localhost:3000`);
 });
