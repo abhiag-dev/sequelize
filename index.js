@@ -65,6 +65,25 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Login successful" });
 });
 
+app.post("/api/add-menu-item", async (req, res) => {
+  try {
+    const { id, name, price, description, category_name } = req.body;
+
+    const newMenuItem = await Menu.create({
+      id,
+      name,
+      price,
+      description,
+      category_name,
+    });
+
+    res.json({ message: "adding successful" });
+  } catch (error) {
+    console.error("Error adding menu item:", error);
+    res.status(500).json({ error: "Failed to add menu item" });
+  }
+});
+
 app.get("/api/login/:username", async (req, res) => {
   try {
     const { username } = req.params;
