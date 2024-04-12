@@ -8,6 +8,7 @@ const Category = sequelize.define(
       type: Sequelize.STRING,
       allowNull: true,
       unique: true,
+      autoIncrement: true,
     },
     category_name: {
       type: Sequelize.STRING,
